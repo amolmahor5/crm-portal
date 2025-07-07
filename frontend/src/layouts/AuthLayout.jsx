@@ -1,26 +1,32 @@
+import React, { useState } from "react";
 import { CheckIcon, GalleryVerticalEnd, Eye, EyeOff } from "lucide-react";
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card } from "@/components/ui/card"
-import { Link } from "react-router-dom"
-import { useState } from "react";
-import { version } from "@/../package.json"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { version } from "@/../package.json";
 
 const plans = [
-    { title: 'Monthly Plan', currency: 'SGD', monthlyRate: 3, yearlyRate: 29, isYearly: false, country: 'SGD' },
-    { title: 'Yearly Plan', currency: 'INR', monthlyRate: 199, yearlyRate: 1799, isYearly: true, country: 'INR' },
-    { title: 'Monthly Plan', currency: 'INR', monthlyRate: 199, yearlyRate: 1799, isYearly: false, country: 'INR' },
-    { title: 'Yearly Plan', currency: 'SGD', monthlyRate: 3, yearlyRate: 29, isYearly: true, country: 'SGD' }
+    { title: "Monthly Plan", currency: "SGD", monthlyRate: 3, yearlyRate: 29, isYearly: false, country: "SGD" },
+    { title: "Yearly Plan", currency: "INR", monthlyRate: 199, yearlyRate: 1799, isYearly: true, country: "INR" },
+    { title: "Monthly Plan", currency: "INR", monthlyRate: 199, yearlyRate: 1799, isYearly: false, country: "INR" },
+    { title: "Yearly Plan", currency: "SGD", monthlyRate: 3, yearlyRate: 29, isYearly: true, country: "SGD" },
 ];
 
-// Reusable Social Auth component
-function AuthWithSocials({ step, setStep, onGoogle, onFacebook }) {
+// Validation helpers
+const validateEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+// Strong password: min 8 chars, upper, lower, number, special char
+const validatePassword = (password) =>
+    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+
+function AuthWithSocials({ step, setStep }) {
     return (
         <div className="w-full max-w-sm mx-auto ">
-            <div className="flex items-center justify-center gap-10 mb-4 text-sm font-medium">
+            <div className="flex items-center justify-center sm:gap-10 mb-4 text-sm font-medium">
                 <button
                     type="button"
                     onClick={() => setStep("login")}
@@ -29,19 +35,19 @@ function AuthWithSocials({ step, setStep, onGoogle, onFacebook }) {
                     Sign In
                 </button>
                 <button
-                    type="button"
                     onClick={() => setStep("register")}
+                    type="button"
                     className={`${step === "register" && "text-blue-700 bg-gray-100"} p-2 px-6 cursor-pointer rounded-md`}
                 >
                     Create Account
                 </button>
             </div>
             <div className="flex flex-col gap-2 mb-4">
-                <Button variant="outline" className="w-full" type="button" onClick={onGoogle}>
+                <Button variant="outline" className="w-full" type="button">
                     <svg className="mr-2" width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M21.805 10.023h-9.765v3.955h5.617c-.242 1.236-1.482 3.627-5.617 3.627-3.377 0-6.13-2.797-6.13-6.25s2.753-6.25 6.13-6.25c1.922 0 3.213.82 3.953 1.527l2.703-2.637c-1.73-1.613-3.953-2.613-6.656-2.613-5.523 0-10 4.477-10 10s4.477 10 10 10c5.742 0 9.547-4.027 9.547-9.723 0-.652-.07-1.148-.156-1.613z" /></svg>
                     Continue with Google
                 </Button>
-                <Button variant="outline" className="w-full" type="button" onClick={onFacebook}>
+                <Button variant="outline" className="w-full" type="button">
                     <svg className="mr-2" width="18" height="18" viewBox="0 0 24 24"><path fill="#1877F3" d="M22.675 0h-21.35c-.733 0-1.325.592-1.325 1.326v21.348c0 .733.592 1.326 1.325 1.326h11.495v-9.294h-3.124v-3.622h3.124v-2.672c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.732 0 1.324-.593 1.324-1.326v-21.349c0-.734-.592-1.326-1.324-1.326" /></svg>
                     Continue with Facebook
                 </Button>
@@ -55,37 +61,28 @@ function AuthWithSocials({ step, setStep, onGoogle, onFacebook }) {
     );
 }
 
-// Validation helpers
-const validateEmail = (email) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-const validatePassword = (password) =>
-    password.length >= 8 && /[A-Z]/.test(password) && /\d/.test(password);
-
-const validateName = (name) =>
-    name.trim().length >= 2;
+function useForm(initial, validate) {
+    const [values, setValues] = useState(initial);
+    const [errors, setErrors] = useState({});
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setValues((v) => ({ ...v, [name]: type === "checkbox" ? checked : value }));
+        setErrors((e) => ({ ...e, [name]: undefined }));
+    };
+    const handleSubmit = (cb) => (e) => {
+        e.preventDefault();
+        const errs = validate(values);
+        setErrors(errs);
+        if (Object.keys(errs).length === 0) cb(values);
+    };
+    return { values, errors, handleChange, handleSubmit };
+}
 
 export default function AuthLayout() {
     const [step, setStep] = useState("welcome");
-    const [registerData, setRegisterData] = useState({ name: "", email: "", password: "", confPassword: "", terms: false });
-    const [registerErrors, setRegisterErrors] = useState({});
-    const [loginData, setLoginData] = useState({ email: "", password: "" });
-    const [loginErrors, setLoginErrors] = useState({});
-    const [forgotEmail, setForgotEmail] = useState("");
-    const [forgotError, setForgotError] = useState("");
-    const [resetData, setResetData] = useState({ code: Array(6).fill(""), password: "", confPassword: "" });
-    const [resetErrors, setResetErrors] = useState({});
-    const [otp, setOtp] = useState(Array(6).fill(""));
-    const [orgName, setOrgName] = useState("");
-    const [orgError, setOrgError] = useState("");
-    const [users, setUsers] = useState("1"); // string
-    const [selectedPlan, setSelectedPlan] = useState(null);
+    const [resetEmail, setResetEmail] = useState(""); // for passing email between steps
+    const [otpEmail, setOtpEmail] = useState(""); // for OTP verification
 
-    // Social handlers (for demo, just log)
-    const handleGoogle = () => console.log("Google Auth Clicked");
-    const handleFacebook = () => console.log("Facebook Auth Clicked");
-
-    // Welcome Page
     function WelcomePage() {
         return (
             <div className="text-center grid gap-8 sm:w-[80%] mx-auto sm:mt-10">
@@ -104,144 +101,123 @@ export default function AuthLayout() {
                     </Button>
                 </div>
             </div>
-        )
+        );
     }
 
-    // Register Form
     function RegisterForm() {
-        const [showPassword, setShowPassword] = useState(false);
-        const [showConfPassword, setShowConfPassword] = useState(false);
-
-        const handleChange = (e) => {
-            const { id, value, type, checked } = e.target;
-            setRegisterData((prev) => ({
-                ...prev,
-                [id]: type === "checkbox" ? checked : value
-            }));
-        };
-
-        const handleSubmit = (e) => {
-            e.preventDefault();
-            let errors = {};
-            if (!validateName(registerData.name)) errors.name = "Name must be at least 2 characters.";
-            if (!validateEmail(registerData.email)) errors.email = "Invalid email.";
-            if (!validatePassword(registerData.password)) errors.password = "Password must be 8+ chars, 1 uppercase, 1 number.";
-            if (registerData.password !== registerData.confPassword) errors.confPassword = "Passwords do not match.";
-            if (!registerData.terms) errors.terms = "You must accept terms.";
-            setRegisterErrors(errors);
-            if (Object.keys(errors).length === 0) {
-                console.log("Register Data:", registerData);
-                setStep("verifyOtp");
+        const [showPass, setShowPass] = useState(false);
+        const [showConf, setShowConf] = useState(false);
+        const { values, errors, handleChange, handleSubmit } = useForm(
+            { name: "", email: "", password: "", confPassword: "", terms: false },
+            (v) => {
+                const e = {};
+                if (!v.name.trim()) e.name = "Name is required";
+                if (!validateEmail(v.email)) e.email = "Invalid email";
+                if (!validatePassword(v.password)) e.password = "Password must be 8+ chars, upper, lower, number, special";
+                if (v.password !== v.confPassword) e.confPassword = "Passwords do not match";
+                if (!v.terms) e.terms = "Accept terms";
+                return e;
             }
-        };
-
+        );
         return (
-            <form className="w-full max-w-sm mx-auto " onSubmit={handleSubmit}>
-                <AuthWithSocials step={step} setStep={setStep} onGoogle={handleGoogle} onFacebook={handleFacebook} />
+            <form className="w-full max-w-sm mx-auto" onSubmit={handleSubmit((vals) => console.log(vals))}>
+                <AuthWithSocials step="register" setStep={setStep} />
                 <div className="grid gap-4">
-                    <div className="grid gap-3">
+                    <div className="grid gap-1">
                         <Label htmlFor="name">Name</Label>
-                        <Input id="name" type="text" value={registerData.name} onChange={handleChange} required />
-                        {registerErrors.name && <span className="text-red-500 text-xs">{registerErrors.name}</span>}
+                        <Input id="name" name="name" value={values.name} onChange={handleChange} />
+                        {errors.name && <span className="text-red-500 text-xs">{errors.name}</span>}
                     </div>
-                    <div className="grid gap-3">
+                    <div className="grid gap-1">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" value={registerData.email} onChange={handleChange} required />
-                        {registerErrors.email && <span className="text-red-500 text-xs">{registerErrors.email}</span>}
+                        <Input id="email" name="email" value={values.email} onChange={handleChange} />
+                        {errors.email && <span className="text-red-500 text-xs">{errors.email}</span>}
                     </div>
-                    <div className="grid gap-3 relative">
+                    <div className="grid gap-1 relative">
                         <Label htmlFor="password">Password</Label>
                         <Input
                             id="password"
-                            type={showPassword ? "text" : "password"}
-                            value={registerData.password}
+                            name="password"
+                            type={showPass ? "text" : "password"}
+                            value={values.password}
                             onChange={handleChange}
-                            required
                             className="pr-10"
                         />
                         <button
                             type="button"
-                            className="absolute right-3 top-9 text-gray-500"
+                            className="absolute right-3 top-7 text-gray-500"
                             tabIndex={-1}
-                            onClick={() => setShowPassword(v => !v)}
+                            onClick={() => setShowPass((v) => !v)}
                         >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
-                        {registerErrors.password && <span className="text-red-500 text-xs">{registerErrors.password}</span>}
+                        {errors.password && <span className="text-red-500 text-xs">{errors.password}</span>}
+                        <span className="text-xs text-muted-foreground mt-1">
+                            Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+                        </span>
                     </div>
-                    <div className="grid gap-3 relative">
+                    <div className="grid gap-1 relative">
                         <Label htmlFor="confPassword">Confirm Password</Label>
                         <Input
                             id="confPassword"
-                            type={showConfPassword ? "text" : "password"}
-                            value={registerData.confPassword}
+                            name="confPassword"
+                            type={showConf ? "text" : "password"}
+                            value={values.confPassword}
                             onChange={handleChange}
-                            required
                             className="pr-10"
                         />
                         <button
                             type="button"
-                            className="absolute right-3 top-9 text-gray-500"
+                            className="absolute right-3 top-7 text-gray-500"
                             tabIndex={-1}
-                            onClick={() => setShowConfPassword(v => !v)}
+                            onClick={() => setShowConf((v) => !v)}
                         >
-                            {showConfPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            {showConf ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
-                        {registerErrors.confPassword && <span className="text-red-500 text-xs">{registerErrors.confPassword}</span>}
+                        {errors.confPassword && <span className="text-red-500 text-xs">{errors.confPassword}</span>}
                     </div>
                     <div className="flex items-center gap-3">
-                        <Checkbox id="terms" checked={registerData.terms} onCheckedChange={val => setRegisterData(d => ({ ...d, terms: !!val }))} />
+                        <Checkbox id="terms" name="terms" checked={values.terms} onCheckedChange={(v) => handleChange({ target: { name: "terms", type: "checkbox", checked: v } })} />
                         <Label htmlFor="terms">Accept terms and conditions</Label>
-                        {registerErrors.terms && <span className="text-red-500 text-xs">{registerErrors.terms}</span>}
                     </div>
+                    {errors.terms && <span className="text-red-500 text-xs">{errors.terms}</span>}
                     <Button type="submit" className="w-full">
                         Create Account
                     </Button>
                 </div>
             </form>
-        )
+        );
     }
 
-    // Login Form
     function LoginForm() {
-        const [showPassword, setShowPassword] = useState(false);
-
-        const handleChange = (e) => {
-            const { id, value } = e.target;
-            setLoginData((prev) => ({
-                ...prev,
-                [id]: value
-            }));
-        };
-        const handleSubmit = (e) => {
-            e.preventDefault();
-            let errors = {};
-            if (!validateEmail(loginData.email)) errors.email = "Invalid email.";
-            if (!validatePassword(loginData.password)) errors.password = "Password must be 8+ chars, 1 uppercase, 1 number.";
-            setLoginErrors(errors);
-            if (Object.keys(errors).length === 0) {
-                console.log("Login Data:", loginData);
-                setStep("createOrg");
+        const [showPass, setShowPass] = useState(false);
+        const { values, errors, handleChange, handleSubmit } = useForm(
+            { email: "", password: "" },
+            (v) => {
+                const e = {};
+                if (!validateEmail(v.email)) e.email = "Invalid email";
+                if (!v.password) e.password = "Password required";
+                return e;
             }
-        };
+        );
         return (
-            <form className="w-full max-w-sm mx-auto" onSubmit={handleSubmit}>
-                <AuthWithSocials step={step} setStep={setStep} onGoogle={handleGoogle} onFacebook={handleFacebook} />
+            <form className="w-full max-w-sm mx-auto" onSubmit={handleSubmit((vals) => console.log(vals))}>
+                <AuthWithSocials step="login" setStep={setStep} />
                 <div className="grid gap-6">
                     <div className="grid gap-6">
-                        <div className="grid gap-3">
+                        <div className="grid gap-1">
                             <Label htmlFor="email">Email</Label>
                             <Input
                                 id="email"
+                                name="email"
                                 type="email"
-                                placeholder="m@example.com"
-                                value={loginData.email}
+                                value={values.email}
                                 onChange={handleChange}
-                                required
+                                placeholder="m@example.com"
                             />
-                            {loginErrors.email && <span className="text-red-500 text-xs">{loginErrors.email}</span>}
+                            {errors.email && <span className="text-red-500 text-xs">{errors.email}</span>}
                         </div>
-                        <div className="grid gap-3 relative">
+                        <div className="grid gap-1 relative">
                             <div className="flex items-center">
                                 <Label htmlFor="password">Password</Label>
                                 <button
@@ -254,21 +230,21 @@ export default function AuthLayout() {
                             </div>
                             <Input
                                 id="password"
-                                type={showPassword ? "text" : "password"}
-                                value={loginData.password}
+                                name="password"
+                                type={showPass ? "text" : "password"}
+                                value={values.password}
                                 onChange={handleChange}
-                                required
                                 className="pr-10"
                             />
                             <button
                                 type="button"
-                                className="absolute right-3 top-9 text-gray-500"
+                                className="absolute right-3 top-8 text-gray-500"
                                 tabIndex={-1}
-                                onClick={() => setShowPassword(v => !v)}
+                                onClick={() => setShowPass((v) => !v)}
                             >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
-                            {loginErrors.password && <span className="text-red-500 text-xs">{loginErrors.password}</span>}
+                            {errors.password && <span className="text-red-500 text-xs">{errors.password}</span>}
                         </div>
                         <Button type="submit" className="w-full">
                             Login
@@ -282,74 +258,23 @@ export default function AuthLayout() {
                     </div>
                 </div>
             </form>
-        )
-    }
-
-    function VerifyOtp() {
-        const handleChange = (idx, val) => {
-            if (!/^[0-9]?$/.test(val)) return;
-            const newOtp = [...otp];
-            newOtp[idx] = val;
-            setOtp(newOtp);
-        };
-        const handleSubmit = (e) => {
-            e.preventDefault();
-            if (otp.some(c => c === "")) return;
-            console.log("OTP Verified:", otp.join(""));
-            setStep("login");
-        };
-        return (
-            <form className="w-full max-w-sm mx-auto flex flex-col items-center space-y-6" onSubmit={handleSubmit}>
-                <div className="text-4xl text-blue-500">📩</div>
-                <h2 className="sm:text-3xl text-2xl font-semibold tracking-tight mb-1">
-                    Verify your Email
-                </h2>
-                <p className="text-muted-foreground text-sm mb-4">
-                    We have sent a verification code to your email<br />
-                    Enter this code to verify your account
-                </p>
-                <div className="flex space-x-2">
-                    {otp.map((char, idx) => (
-                        <Input
-                            key={idx}
-                            type="text"
-                            maxLength={1}
-                            value={char}
-                            onChange={e => handleChange(idx, e.target.value)}
-                            className="sm:w-10 w-9 sm:h-10 h-9 text-center border rounded-md text-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    ))}
-                </div>
-                <Button
-                    disabled={otp.includes("")}
-                    className={`w-full py-2 rounded-md text-white font-semibold ${otp.includes("") ? "bg-gray-300 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
-                    type="submit"
-                >
-                    Verify
-                </Button>
-                <div className="grid grid-cols-2 gap-4 w-full">
-                    <Button type="button" onClick={() => setOtp(Array(6).fill(""))}>
-                        Resend
-                    </Button>
-                    <Button variant='secondary' className="w-full" type="button" onClick={() => setStep("login")}>
-                        Cancel
-                    </Button>
-                </div>
-            </form>
-        )
+        );
     }
 
     function ForgotPassword() {
-        const handleSubmit = (e) => {
+        const [email, setEmail] = useState("");
+        const [error, setError] = useState("");
+        function handleSubmit(e) {
             e.preventDefault();
-            if (!validateEmail(forgotEmail)) {
-                setForgotError("Invalid email.");
-                return;
+            if (!validateEmail(email)) {
+                setError("Invalid email");
+            } else {
+                setError("");
+                setResetEmail(email);
+                setOtpEmail(email);
+                setStep("verifyOtp");
             }
-            setForgotError("");
-            console.log("Forgot Password Email:", forgotEmail);
-            setStep("reset");
-        };
+        }
         return (
             <form className={cn("flex flex-col gap-6 w-full max-w-sm mx-auto ")} onSubmit={handleSubmit}>
                 <div className="flex flex-col  gap-2">
@@ -361,8 +286,8 @@ export default function AuthLayout() {
                 <div className="grid gap-6">
                     <div className="grid gap-3">
                         <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" type="email" placeholder="m@example.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required />
-                        {forgotError && <span className="text-red-500 text-xs">{forgotError}</span>}
+                        <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+                        {error && <span className="text-red-500 text-xs">{error}</span>}
                     </div>
                     <Button type="submit" className="w-full">
                         Send verification Code
@@ -375,35 +300,100 @@ export default function AuthLayout() {
                     </button>
                 </div>
             </form>
-        )
+        );
+    }
+
+    function VerifyOtp() {
+        const [otp, setOtp] = useState(Array(6).fill(""));
+        const [error, setError] = useState("");
+        const inputs = [];
+
+        function handleChange(idx, val) {
+            if (!/^[0-9]?$/.test(val)) return;
+            const newOtp = [...otp];
+            newOtp[idx] = val;
+            setOtp(newOtp);
+            if (val && idx < 5 && inputs[idx + 1]) {
+                inputs[idx + 1].focus();
+            }
+        }
+
+        function handleKeyDown(idx, e) {
+            if (e.key === "Backspace" && !otp[idx] && idx > 0) {
+                inputs[idx - 1].focus();
+            }
+        }
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            if (otp.join("").length !== 6) {
+                setError("Enter 6 digit code");
+            } else {
+                setError("");
+                setStep("reset");
+            }
+        }
+
+        return (
+            <form className="w-full max-w-sm mx-auto flex flex-col items-center space-y-6" onSubmit={handleSubmit}>
+                <div className="text-4xl text-blue-500">📩</div>
+                <h2 className="sm:text-3xl text-2xl font-semibold tracking-tight mb-1">
+                    Verify your Email
+                </h2>
+                <p className="text-muted-foreground text-sm mb-4">
+                    We have sent a verification code to your email<br />
+                    <span className="font-semibold">{otpEmail}</span>
+                </p>
+                <div className="flex space-x-2">
+                    {[...Array(6)].map((_, idx) => (
+                        <Input
+                            key={idx}
+                            type="text"
+                            maxLength={1}
+                            className="sm:w-10 w-9 sm:h-10 h-9 text-center border rounded-md text-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={otp[idx]}
+                            onChange={e => handleChange(idx, e.target.value)}
+                            onKeyDown={e => handleKeyDown(idx, e)}
+                            ref={el => inputs[idx] = el}
+                        />
+                    ))}
+                </div>
+                {error && <span className="text-red-500 text-xs">{error}</span>}
+                <Button className="w-full py-2 rounded-md text-white font-semibold bg-blue-500 hover:bg-blue-600" type="submit">
+                    Verify
+                </Button>
+                <div className="grid grid-cols-2 gap-4 w-full">
+                    <Button type="button" onClick={() => setOtp(Array(6).fill(""))}>
+                        Resend
+                    </Button>
+                    <Button variant='secondary' className="w-full" type="button" onClick={() => setStep("login")}>
+                        Cancel
+                    </Button>
+                </div>
+            </form>
+        );
     }
 
     function ResetPassword() {
-        const [showPassword, setShowPassword] = useState(false);
-        const [showConfPassword, setShowConfPassword] = useState(false);
-
-        const handleCodeChange = (idx, val) => {
-            if (!/^[0-9]?$/.test(val)) return;
-            const newCode = [...resetData.code];
-            newCode[idx] = val;
-            setResetData(d => ({ ...d, code: newCode }));
-        };
-        const handleChange = (e) => {
-            const { id, value } = e.target;
-            setResetData(d => ({ ...d, [id]: value }));
-        };
-        const handleSubmit = (e) => {
+        const [showPass, setShowPass] = useState(false);
+        const [showConf, setShowConf] = useState(false);
+        const [values, setValues] = useState({ password: "", confPassword: "" });
+        const [errors, setErrors] = useState({});
+        function handleChange(e) {
+            const { name, value } = e.target;
+            setValues(v => ({ ...v, [name]: value }));
+            setErrors(e => ({ ...e, [name]: undefined }));
+        }
+        function handleSubmit(e) {
             e.preventDefault();
-            let errors = {};
-            if (resetData.code.some(c => c === "")) errors.code = "Enter all code digits.";
-            if (!validatePassword(resetData.password)) errors.password = "Password must be 8+ chars, 1 uppercase, 1 number.";
-            if (resetData.password !== resetData.confPassword) errors.confPassword = "Passwords do not match.";
-            setResetErrors(errors);
-            if (Object.keys(errors).length === 0) {
-                console.log("Reset Password Data:", resetData);
+            const eObj = {};
+            if (!validatePassword(values.password)) eObj.password = "Password must be 8+ chars, upper, lower, number, special";
+            if (values.password !== values.confPassword) eObj.confPassword = "Passwords do not match";
+            setErrors(eObj);
+            if (Object.keys(eObj).length === 0) {
                 setStep("login");
             }
-        };
+        }
         return (
             <form className="w-full max-w-sm mx-auto " onSubmit={handleSubmit}>
                 <h2 className="sm:text-3xl text-2xl font-semibold tracking-tight mb-1">
@@ -412,31 +402,15 @@ export default function AuthLayout() {
                 <p className="text-muted-foreground text-sm mb-4">Confirm code and enter new password.</p>
                 <div className="grid gap-2">
                     <Label >Email</Label>
-                    <Input
-                        type="email"
-                        value={forgotEmail}
-                        disabled
-                    />
+                    <Input type="email" disabled value={resetEmail || "user@email.com"} />
                 </div>
-                <div className=" flex justify-between gap-2">
-                    {resetData.code.map((digit, idx) => (
-                        <Input
-                            key={idx}
-                            id={`code-${idx}`}
-                            type="text"
-                            value={digit}
-                            maxLength={1}
-                            onChange={e => handleCodeChange(idx, e.target.value)}
-                        />
-                    ))}
-                </div>
-                {resetErrors.code && <span className="text-red-500 text-xs">{resetErrors.code}</span>}
                 <div className="grid gap-2 relative">
                     <Label>Password</Label>
                     <Input
                         id="password"
-                        type={showPassword ? "text" : "password"}
-                        value={resetData.password}
+                        name="password"
+                        type={showPass ? "text" : "password"}
+                        value={values.password}
                         onChange={handleChange}
                         className="pr-10"
                     />
@@ -444,36 +418,40 @@ export default function AuthLayout() {
                         type="button"
                         className="absolute right-3 top-9 text-gray-500"
                         tabIndex={-1}
-                        onClick={() => setShowPassword(v => !v)}
+                        onClick={() => setShowPass(v => !v)}
                     >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
-                    {resetErrors.password && <span className="text-red-500 text-xs">{resetErrors.password}</span>}
+                    {errors.password && <span className="text-red-500 text-xs">{errors.password}</span>}
+                    <span className="text-xs text-muted-foreground mt-1">
+                        Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+                    </span>
                 </div>
                 <div className="grid gap-2 relative">
                     <Label>Confirm Password</Label>
                     <Input
                         id="confPassword"
-                        type={showConfPassword ? "text" : "password"}
-                        value={resetData.confPassword}
+                        name="confPassword"
+                        type={showConf ? "text" : "password"}
+                        value={values.confPassword}
                         onChange={handleChange}
                         className="pr-10"
                     />
                     <button
                         type="button"
-                        className="absolute right-3 top-9 text-gray-500"
+                        className="absolute right-3 top-6 text-gray-500"
                         tabIndex={-1}
-                        onClick={() => setShowConfPassword(v => !v)}
+                        onClick={() => setShowConf(v => !v)}
                     >
-                        {showConfPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showConf ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
-                    {resetErrors.confPassword && <span className="text-red-500 text-xs">{resetErrors.confPassword}</span>}
+                    {errors.confPassword && <span className="text-red-500 text-xs">{errors.confPassword}</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <Button type="submit">
                         Continue
                     </Button>
-                    <Button variant="outline" type="button" onClick={() => setResetData(d => ({ ...d, code: Array(6).fill("") }))}>
+                    <Button variant="outline" type="button" onClick={() => setStep("forgot")}>
                         Resend
                     </Button>
                 </div>
@@ -481,20 +459,20 @@ export default function AuthLayout() {
                     Cancel & Go To Sign In
                 </Button>
             </form>
-        )
+        );
     }
 
     function CreateOrganizationForm() {
-        const handleSubmit = (e) => {
+        const [org, setOrg] = useState("");
+        const [error, setError] = useState("");
+        function handleSubmit(e) {
             e.preventDefault();
-            if (!validateName(orgName)) {
-                setOrgError("Workspace name must be at least 2 characters.");
-                return;
+            if (!org.trim()) setError("Workspace name required");
+            else {
+                setError("");
+                console.log({ organizationName: org });
             }
-            setOrgError("");
-            console.log("Organization Name:", orgName);
-            setStep("pricing");
-        };
+        }
         return (
             <form className="sm:mt-36 w-full max-w-sm mx-auto " onSubmit={handleSubmit}>
                 <div>
@@ -506,30 +484,22 @@ export default function AuthLayout() {
                             id="organizationName"
                             type="text"
                             placeholder="Workspace Name"
-                            value={orgName}
-                            onChange={e => setOrgName(e.target.value)}
+                            value={org}
+                            onChange={e => setOrg(e.target.value)}
                         />
                         <small className="text-xs leading-none font-medium">- Try the name of your company or organization.</small>
-                        {orgError && <span className="text-red-500 text-xs">{orgError}</span>}
+                        {error && <span className="text-red-500 text-xs">{error}</span>}
                     </div>
                     <Button className="w-full mt-4" type="submit">
                         Continue
                     </Button>
                 </div>
             </form>
-        )
+        );
     }
 
     function PricingPlanes() {
-        const getTotal = (plan) => {
-            const userCount = parseInt(users, 10) || 0;
-            if (userCount <= 5) return 0;
-            return plan.isYearly ? (plan.yearlyRate * (userCount - 5)) : (plan.monthlyRate * (userCount - 5));
-        };
-        const handleSelect = (plan) => {
-            setSelectedPlan(plan);
-            console.log("Selected Plan:", { plan, users: parseInt(users, 10) || 0 });
-        };
+        const [users, setUsers] = useState(1);
         return (
             <div className="sm:px-6">
                 <div className="grid gap-4 text-center w-full">
@@ -547,21 +517,9 @@ export default function AuthLayout() {
                             type="number"
                             min="1"
                             max="50"
-                            value={users}
-                            onChange={e => {
-                                let val = e.target.value;
-                                // Allow empty string for typing, clamp between 1 and 50 if not empty
-                                if (val === "") {
-                                    setUsers("");
-                                } else if (/^\d+$/.test(val)) {
-                                    // Remove leading zeros
-                                    val = val.replace(/^0+/, "");
-                                    // Clamp between 1 and 50
-                                    let num = Math.max(1, Math.min(50, Number(val)));
-                                    setUsers(num.toString());
-                                }
-                            }}
                             className="w-64"
+                            value={users}
+                            onChange={e => setUsers(Number(e.target.value))}
                         />
                     </div>
                 </div>
@@ -587,20 +545,20 @@ export default function AuthLayout() {
                                 </li>
                             </ul>
                             <h3 className="sm:text-xl text-md font-semibold text-indigo-800 tracking-tight">
-                                Total: <span className="font-extrabold">{getTotal(plan).toFixed(2)} {plan.currency}</span>
+                                Total: <span className="font-extrabold">
+                                    {users <= 5 ? "0.00" : ((plan.isYearly ? plan.yearlyRate : plan.monthlyRate) * users).toFixed(2)} {plan.currency}
+                                </span>
                             </h3>
-                            <Button variant='outline' className="w-full text-indigo-800 hover:underline underline-offset-4 underline-indigo-800 hover:text-indigo-800 font-semibold py-3"
-                                onClick={() => handleSelect(plan)}>
+                            <Button variant='outline' className="w-full text-indigo-800 hover:underline underline-offset-4 underline-indigo-800 hover:text-indigo-800 font-semibold py-3">
                                 Switch to this Plan
                             </Button>
                         </Card>
                     ))}
                 </div>
             </div>
-        )
+        );
     }
 
-    // Main render
     return (
         <div className="grid min-h-svh lg:grid-cols-2 bg-black">
             <Card className="sm:min-h-svh sm:m-6 m-3 shadow-none">
@@ -636,7 +594,9 @@ export default function AuthLayout() {
                         Boost your productivity and get the peace of mind you deserve. Try UCServices today and take control of your business with ease!
                     </p>
                 </div>
-                <p className="text-white my-3 text-start text-sm">Copyright © 2025 Umbakrar Tech Pvt Ltd.. All rights reserved. Version : {version}</p>
+                <p className="text-white my-3 text-start text-sm">
+                    Copyright © 2025 Umbakrar Tech Pvt Ltd.. All rights reserved. Version : {version}
+                </p>
             </div>
         </div>
     );

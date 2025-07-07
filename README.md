@@ -1,4 +1,4 @@
-# Delight360 CRM - Complete Backend System
+# UC Services CRM - Complete Backend System
 
 A comprehensive Customer Relationship Management (CRM) and Business Management backend system built with Node.js, Express.js, and MongoDB. This system provides a complete solution for managing leads, contacts, deals, projects, invoices, tasks, and more.
 
