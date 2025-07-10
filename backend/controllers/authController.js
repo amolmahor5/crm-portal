@@ -1,35 +1,48 @@
-const crypto = require('crypto');
-const User = require('../models/User');
-const Organization = require('../models/Organization');
-const NotificationTriggers = require('../utils/notificationTriggers');
+const crypto = require("crypto");
+const User = require("../models/User");
+const Organization = require("../models/Organization");
+const NotificationTriggers = require("../utils/notificationTriggers");
 
 // @desc    Register user
 // @route   POST /api/v1/auth/register
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, role, organizationId, phone } = req.body;
+    const { firstName, email, password, role, organizationId } = req.body;
+
+    // console.log("user register---", req.body);
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        error: "User already exists",
+      });
+    }
 
     // Check if organization exists
     const organization = await Organization.findById(organizationId);
     if (!organization) {
       return res.status(404).json({
         success: false,
-        error: 'Organization not found'
+        error: "Organization not found...",
       });
     }
 
     // Check subscription limits
-    const userCount = await User.countDocuments({ organization: organizationId });
+    const userCount = await User.countDocuments({
+      organization: organizationId,
+    });
     if (userCount >= organization.subscription.features.maxUsers) {
       return res.status(400).json({
         success: false,
-        error: 'User limit reached for current subscription plan'
+        error: "User limit reached for current subscription plan",
       });
     }
 
     // Generate employee ID
-    const employeeId = `EMP-${String(userCount + 1).padStart(6, '0')}`;
+    const employeeId = `EMP-${String(userCount + 1).padStart(6, "0")}`;
 
     // Create user
     const user = await User.create({
@@ -39,8 +52,7 @@ exports.register = async (req, res) => {
       password,
       role,
       organization: organizationId,
-      phone,
-      employeeId
+      employeeId,
     });
 
     // Send welcome notification
@@ -50,7 +62,7 @@ exports.register = async (req, res) => {
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -66,27 +78,27 @@ exports.login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        error: 'Please provide an email and password'
+        error: "Please provide an email and password",
       });
     }
 
     // Check for user
     const user = await User.findOne({ email })
-      .select('+password')
-      .populate('organization', 'name subscription');
+      .select("+password")
+      .populate("organization", "name subscription");
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid credentials'
+        error: "Invalid credentials",
       });
     }
 
     // Check if user is active
-    if (user.status !== 'active') {
+    if (user.status !== "active") {
       return res.status(401).json({
         success: false,
-        error: 'Account is inactive. Please contact administrator.'
+        error: "Account is inactive. Please contact administrator.",
       });
     }
 
@@ -94,7 +106,7 @@ exports.login = async (req, res) => {
     if (!user.organization.isActive) {
       return res.status(401).json({
         success: false,
-        error: 'Organization is inactive. Please contact support.'
+        error: "Organization is inactive. Please contact support.",
       });
     }
 
@@ -104,7 +116,7 @@ exports.login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid credentials'
+        error: "Invalid credentials",
       });
     }
 
@@ -116,7 +128,7 @@ exports.login = async (req, res) => {
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -126,17 +138,19 @@ exports.login = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
-      .populate('organization', 'name subscription settings');
+    const user = await User.findById(req.user.id).populate(
+      "organization",
+      "name subscription settings"
+    );
 
     res.status(200).json({
       success: true,
-      data: user
+      data: user,
     });
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -151,22 +165,22 @@ exports.updateDetails = async (req, res) => {
       lastName: req.body.lastName,
       email: req.body.email,
       phone: req.body.phone,
-      preferences: req.body.preferences
+      preferences: req.body.preferences,
     };
 
     const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
       new: true,
-      runValidators: true
+      runValidators: true,
     });
 
     res.status(200).json({
       success: true,
-      data: user
+      data: user,
     });
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -176,13 +190,13 @@ exports.updateDetails = async (req, res) => {
 // @access  Private
 exports.updatePassword = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('+password');
+    const user = await User.findById(req.user.id).select("+password");
 
     // Check current password
     if (!(await user.matchPassword(req.body.currentPassword))) {
       return res.status(401).json({
         success: false,
-        error: 'Password is incorrect'
+        error: "Password is incorrect",
       });
     }
 
@@ -193,7 +207,7 @@ exports.updatePassword = async (req, res) => {
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -208,7 +222,7 @@ exports.forgotPassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'There is no user with that email'
+        error: "There is no user with that email",
       });
     }
 
@@ -218,17 +232,19 @@ exports.forgotPassword = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Create reset url
-    const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/auth/resetpassword/${resetToken}`;
+    const resetUrl = `${req.protocol}://${req.get(
+      "host"
+    )}/api/v1/auth/resetpassword/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
 
     try {
       // Send email notification
       await NotificationService.queueNotification({
-        type: 'email',
+        type: "email",
         data: {
           to: user.email,
-          subject: 'Password Reset Request',
+          subject: "Password Reset Request",
           html: `
             <h3>Password Reset Request</h3>
             <p>You are receiving this email because you (or someone else) has requested the reset of a password.</p>
@@ -239,16 +255,16 @@ exports.forgotPassword = async (req, res) => {
           organizationId: user.organization,
           metadata: {
             userId: user._id,
-            relatedTo: 'user',
+            relatedTo: "user",
             relatedId: user._id,
-            priority: 'high'
-          }
-        }
+            priority: "high",
+          },
+        },
       });
 
       res.status(200).json({
         success: true,
-        data: 'Email sent'
+        data: "Email sent",
       });
     } catch (err) {
       console.log(err);
@@ -259,13 +275,13 @@ exports.forgotPassword = async (req, res) => {
 
       return res.status(500).json({
         success: false,
-        error: 'Email could not be sent'
+        error: "Email could not be sent",
       });
     }
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -277,19 +293,19 @@ exports.resetPassword = async (req, res) => {
   try {
     // Get hashed token
     const resetPasswordToken = crypto
-      .createHash('sha256')
+      .createHash("sha256")
       .update(req.params.resettoken)
-      .digest('hex');
+      .digest("hex");
 
     const user = await User.findOne({
       resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() }
+      resetPasswordExpire: { $gt: Date.now() },
     });
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid token'
+        error: "Invalid token",
       });
     }
 
@@ -303,7 +319,7 @@ exports.resetPassword = async (req, res) => {
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -312,14 +328,14 @@ exports.resetPassword = async (req, res) => {
 // @route   GET /api/v1/auth/logout
 // @access  Private
 exports.logout = async (req, res) => {
-  res.cookie('token', 'none', {
+  res.cookie("token", "none", {
     expires: new Date(Date.now() + 10 * 1000),
-    httpOnly: true
+    httpOnly: true,
   });
 
   res.status(200).json({
     success: true,
-    data: {}
+    data: {},
   });
 };
 
@@ -332,16 +348,16 @@ const sendTokenResponse = (user, statusCode, res) => {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
     ),
-    httpOnly: true
+    httpOnly: true,
   };
 
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     options.secure = true;
   }
 
   res
     .status(statusCode)
-    .cookie('token', token, options)
+    .cookie("token", token, options)
     .json({
       success: true,
       token,
@@ -353,7 +369,7 @@ const sendTokenResponse = (user, statusCode, res) => {
         role: user.role,
         organization: user.organization,
         permissions: user.permissions,
-        preferences: user.preferences
-      }
+        preferences: user.preferences,
+      },
     });
 };

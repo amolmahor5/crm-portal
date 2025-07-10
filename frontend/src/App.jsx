@@ -1,9 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
-import AuthLayout from "./layouts/AuthLayout";
+import AuthLayout from "./layouts/auth/AuthLayout";
 import { useAuth } from "@/hooks/useAuth";
 
-import { userPermissions, subRouteMeta } from "@/pages/permissions/PagesPermission";
+import {
+  userPermissions,
+  subRouteMeta,
+} from "@/pages/permissions/PagesPermission";
 import SalesRoutes from "@/routes/SalesRoutes";
 import FinanceRoutes from "@/routes/FinanceRoutes";
 import AdminRoutes from "@/routes/AdminRoutes";
@@ -84,7 +87,9 @@ export default function App() {
           .map((route) => (
             <Route
               key={route.path}
-              path={route.path.startsWith("/") ? route.path.slice(1) : route.path}
+              path={
+                route.path.startsWith("/") ? route.path.slice(1) : route.path
+              }
               element={<Page title={route.title} />}
             />
           ))}

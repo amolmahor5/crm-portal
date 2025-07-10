@@ -2,13 +2,12 @@
 import { useState, useEffect } from "react";
 
 export const useAuth = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    useEffect(() => {
-        const token = localStorage.getItem("auth_token");
-        // const token = true;
-        setIsAuthenticated(!!token);
-    }, []);
+  useEffect(() => {
+    const token = localStorage.getItem("cognitoEntryToken");
+    setIsAuthenticated(!!token);
+  }, []);
 
-    return { isAuthenticated };
+  return { isAuthenticated };
 };

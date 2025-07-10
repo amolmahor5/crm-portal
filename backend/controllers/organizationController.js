@@ -1,4 +1,4 @@
-const Organization = require('../models/Organization');
+const Organization = require("../models/Organization");
 
 // @desc    Create new organization
 // @route   POST /api/v1/organizations
@@ -9,12 +9,12 @@ exports.createOrganization = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: organization
+      data: organization,
     });
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -29,12 +29,12 @@ exports.getOrganizations = async (req, res) => {
     res.status(200).json({
       success: true,
       count: organizations.length,
-      data: organizations
+      data: organizations,
     });
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -49,18 +49,18 @@ exports.getOrganization = async (req, res) => {
     if (!organization) {
       return res.status(404).json({
         success: false,
-        error: 'Organization not found'
+        error: "Organization not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      data: organization
+      data: organization,
     });
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -75,25 +75,25 @@ exports.updateOrganization = async (req, res) => {
       req.body,
       {
         new: true,
-        runValidators: true
+        runValidators: true,
       }
     );
 
     if (!organization) {
       return res.status(404).json({
         success: false,
-        error: 'Organization not found'
+        error: "Organization not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      data: organization
+      data: organization,
     });
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -108,7 +108,7 @@ exports.deleteOrganization = async (req, res) => {
     if (!organization) {
       return res.status(404).json({
         success: false,
-        error: 'Organization not found'
+        error: "Organization not found",
       });
     }
 
@@ -116,12 +116,12 @@ exports.deleteOrganization = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: {}
+      data: {},
     });
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
@@ -136,7 +136,7 @@ exports.updateSubscription = async (req, res) => {
     if (!subscriptionPlan) {
       return res.status(400).json({
         success: false,
-        error: 'Please provide a subscription plan'
+        error: "Please provide a subscription plan",
       });
     }
 
@@ -145,29 +145,29 @@ exports.updateSubscription = async (req, res) => {
       {
         subscriptionPlan,
         subscriptionStartDate: Date.now(),
-        subscriptionStatus: 'active'
+        subscriptionStatus: "active",
       },
       {
         new: true,
-        runValidators: true
+        runValidators: true,
       }
     );
 
     if (!organization) {
       return res.status(404).json({
         success: false,
-        error: 'Organization not found'
+        error: "Organization not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      data: organization
+      data: organization,
     });
   } catch (err) {
     res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
     });
   }
 };
